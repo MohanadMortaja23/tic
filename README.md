@@ -1,3 +1,8 @@
+
+![Screenshot 2025-05-15 162706](https://github.com/user-attachments/assets/54231a0a-d0a8-4b17-9e32-c08c91b34d25)
+![Screenshot 2025-05-15 162647](https://github.com/user-attachments/assets/285590c3-adcb-4132-a0e6-48ab8483af2a)
+![Screenshot 2025-05-15 162620](https://github.com/user-attachments/assets/001b15ca-c329-426d-8695-2df34843b9e4)
+
 ما الذي أنجزناه في هذا المشروع؟
 قمنا ببرمجة لعبة إكس-أو (Tic-Tac-Toe) بسيطة تعمل من خلال الكونسول (شاشة الأوامر)، بحيث يمكن للاعبين التناوب على اللعب حتى يفوز أحدهما أو تنتهي المباراة بالتعادل.
 
