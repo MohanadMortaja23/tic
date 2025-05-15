@@ -1,144 +1,188 @@
-import 'dart:io'; // استدعاء مكتبة الإدخال/الإخراج للتعامل مع الكونسول
+import "dart:io";
 
-class TicTacToe {
-  late List<List<String>> board; // لوحة اللعب 3x3
-  String currentPlayer = 'X'; // اللاعب الحالي (يبدأ بـ X)
-  bool gameOver = false; // حالة انتهاء اللعبة
-  String winner = ''; // الفائز
-  bool draw = false; // هل النتيجة تعادل؟
-  int moveCount = 0; // عدد الحركات
+// عدد الخانات التي تم تعبئتها
+int filledCellsCount = 0;
 
-  TicTacToe() {
-    initializeBoard(); // تهيئة اللوحة عند إنشاء اللعبة
+// حجم اللوحة (3×3)
+int boardSize = 3;
+
+// مصفوفة تمثل اللوحة
+List<List<String>> board = [];
+
+// تحديد دور اللاعب الحالي
+Turn? currentTurn;
+
+// رسالة تعليمات للمستخدم
+String? instructionMessage;
+
+// الرموز المستخدمة من قبل اللاعبين
+String playerSigns = "XO";
+
+void main() {
+  currentTurn = Turn.Player1;
+  initializeBoard();
+  while (true) {
+    displayBoard();
+    checkDraw(currentTurn == Turn.Player1 ? Turn.Player2 : Turn.Player1);
+    checkWin(currentTurn == Turn.Player1 ? Turn.Player2 : Turn.Player1);
+    showMoveInstructions();
+    switchTurn();
+  }
+}
+
+// دالة لإنشاء مصفوفة اللوحة بالأرقام
+void initializeBoard() {
+  for (int i = 0; i < boardSize; i++) {
+    List<String> row = [];
+    for (int j = 1; j <= boardSize; j++) {
+      int cellNumber = i * boardSize + j;
+      row.add("$cellNumber");
+    }
+    board.add(row);
+  }
+}
+
+// دالة لطباعة مصفوفة اللوحة بشكل منسق
+void displayBoard() {
+  for (int i = 0; i < boardSize; i++) {
+    for (int j = 0; j < boardSize; j++) {
+      stdout.write(" ${board[i][j]} ");
+      if (j < boardSize - 1) stdout.write("|");
+    }
+    print("");
+    if (i < boardSize - 1) print("---+---+---");
+  }
+}
+
+// تبديل الدور بين اللاعبين
+void switchTurn() {
+  if (currentTurn == Turn.Player1)
+    currentTurn = Turn.Player2;
+  else
+    currentTurn = Turn.Player1;
+}
+
+// طباعة رسالة الدور الحالي وأخذ حركة اللاعب
+void showMoveInstructions() {
+  instructionMessage =
+      (currentTurn == Turn.Player1 ? "Player 1" : "Player 2") +
+      ", please enter the number of the square to place your ";
+
+  instructionMessage =
+      instructionMessage! + (currentTurn == Turn.Player1 ? "X:" : "O:");
+  instructionMessage = instructionMessage! + " (or 'X' to end the game)";
+
+  print(instructionMessage);
+
+  String inputOption = stdin.readLineSync()!;
+  if (inputOption == 'X') {
+    print("Game is ENDED!!");
+    exit(0);
   }
 
-  // دالة تهيئة اللوحة
-  void initializeBoard() {
-    board = List.generate(3, (_) => List.filled(3, ' ')); // إنشاء لوحة 3x3 فارغة
-    currentPlayer = 'X'; // إعادة تعيين اللاعب الحالي
-    gameOver = false; // إعادة تعيين حالة اللعبة
-    winner = ''; // إعادة تعيين الفائز
-    draw = false; // إعادة تعيين التعادل
-    moveCount = 0; // إعادة تعيين عدد الحركات
+  int selectedCell = int.parse(inputOption);
+
+  while (!isValidMove(selectedCell, currentTurn)) {
+    print("Invalid move. Try again:");
+    selectedCell = int.parse(stdin.readLineSync()!);
   }
+}
 
-  // دالة طباعة لوحة اللعب
-  void printBoard() {
-    print('\n  0   1   2'); // طباعة أرقام الأعمدة
-    for (int i = 0; i < 3; i++) {
-      print('$i ${board[i][0]} | ${board[i][1]} | ${board[i][2]}'); // طباعة الصفوف
-      if (i < 2) print('  ---------'); // طباعة الخطوط الفاصلة
-    }
-    print('');
+// التأكد من صحة اختيار اللاعب
+bool isValidMove(int cellNumber, Turn? playerTurn) {
+  int row = ((cellNumber - 1) / boardSize).toInt();
+  int col = (cellNumber - 1) % boardSize;
+
+  if (board[row][col] == "$cellNumber") {
+    filledCellsCount++;
+    board[row][col] = playerTurn == Turn.Player1 ? 'X' : 'O';
+    return true;
   }
+  return false;
+}
 
-  // دالة تنفيذ الحركة
-  bool makeMove(int row, int col) {
-    // التحقق من صحة الحركة
-    if (row < 0 || row > 2 || col < 0 || col > 2 || board[row][col] != ' ') {
-      return false; // حركة غير صالحة
-    }
-
-    board[row][col] = currentPlayer; // تسجيل الحركة
-    moveCount++; // زيادة عدد الحركات
-
-    // التحقق من وجود فائز
-    if (checkWin(row, col)) {
-      gameOver = true;
-      winner = currentPlayer;
-    } else if (moveCount == 9) { // التحقق من التعادل
-      gameOver = true;
-      draw = true;
-    } else {
-      currentPlayer = currentPlayer == 'X' ? 'O' : 'X'; // تبديل اللاعب
-    }
-
-    return true; // حركة صالحة
+// التحقق من التعادل
+void checkDraw(Turn playerTurn) {
+  if (filledCellsCount == boardSize * boardSize) {
+    print("Game ended in a draw!");
+    exit(0);
   }
+}
 
-  // دالة التحقق من الفوز
-  bool checkWin(int row, int col) {
-    // التحقق من الصف
-    if (board[row][0] == currentPlayer &&
-        board[row][1] == currentPlayer &&
-        board[row][2] == currentPlayer) {
-      return true;
-    }
+// دالة طباعة اللاعب الفائز
+void printWinner(Turn winner) {
+  print(
+    "Congrats " + (winner == Turn.Player1 ? "Player 1" : "Player 2") + " wins!",
+  );
+}
 
-    // التحقق من العمود
-    if (board[0][col] == currentPlayer &&
-        board[1][col] == currentPlayer &&
-        board[2][col] == currentPlayer) {
-      return true;
-    }
-
-    // التحقق من القطر الرئيسي
-    if (row == col &&
-        board[0][0] == currentPlayer &&
-        board[1][1] == currentPlayer &&
-        board[2][2] == currentPlayer) {
-      return true;
-    }
-
-    // التحقق من القطر الثانوي
-    if (row + col == 2 &&
-        board[0][2] == currentPlayer &&
-        board[1][1] == currentPlayer &&
-        board[2][0] == currentPlayer) {
-      return true;
-    }
-
-    return false; // لا يوجد فوز
-  }
-
-  // دالة تشغيل اللعبة الرئيسية
-  void play() {
-    print('Welcome to Tic Tac Toe!');
-    print('Player X goes first. Enter row and column numbers (0-2) separated by space.');
-
-    while (!gameOver) {
-      printBoard(); // عرض اللوحة
-      print('Player $currentPlayer\'s turn:');
-
-      try {
-        var input = stdin.readLineSync()?.trim().split(' '); // قراءة الإدخال
-        if (input == null || input.length != 2) {
-          print('Invalid input. Please enter two numbers (0-2) separated by space.');
-          continue;
-        }
-
-        int row = int.parse(input[0]);
-        int col = int.parse(input[1]);
-
-        if (!makeMove(row, col)) {
-          print('Invalid move. Try again.');
-        }
-      } catch (e) {
-        print('Invalid input. Please enter two numbers (0-2) separated by space.');
+// دوال فحص الفوز
+bool checkRows() {
+  for (int i = 0; i < boardSize; i++) {
+    bool match = true;
+    for (int j = 1; j < boardSize; j++) {
+      if (board[i][j] != board[i][j - 1]) {
+        match = false;
+        break;
       }
     }
+    if (match) return true;
+  }
+  return false;
+}
 
-    printBoard();
-    if (draw) {
-      print('The game is a draw!'); // نتيجة التعادل
-    } else {
-      print('Player $winner wins!'); // إعلان الفائز
+bool checkColumns() {
+  for (int i = 0; i < boardSize; i++) {
+    bool match = true;
+    for (int j = 1; j < boardSize; j++) {
+      if (board[j][i] != board[j - 1][i]) {
+        match = false;
+        break;
+      }
     }
+    if (match) return true;
+  }
+  return false;
+}
 
-    // السؤال عن إعادة اللعب
-    print('\nPlay again? (y/n)');
-    var playAgain = stdin.readLineSync()?.trim().toLowerCase();
-    if (playAgain == 'y') {
-      initializeBoard(); // إعادة تهيئة اللوحة
-      play(); // إعادة اللعب
-    } else {
-      print('Thanks for playing!'); // إنهاء اللعبة
+bool checkMainDiagonal() {
+  bool match = true;
+  for (int i = 1; i < boardSize; i++) {
+    if (board[i][i] != board[i - 1][i - 1]) {
+      match = false;
+      break;
+    }
+  }
+  return match;
+}
+
+bool checkSecondaryDiagonal() {
+  bool match = true;
+  for (int i = 1; i < boardSize; i++) {
+    if (board[i][boardSize - i - 1] != board[i - 1][boardSize - (i - 1) - 1]) {
+      match = false;
+      break;
+    }
+  }
+  return match;
+}
+
+// التحقق من وجود فائز بعد كل حركة
+void checkWin(Turn playerTurn) {
+  List<Function> winCheckers = [
+    checkRows,
+    checkColumns,
+    checkMainDiagonal,
+    checkSecondaryDiagonal,
+  ];
+
+  for (var check in winCheckers) {
+    if (check()) {
+      printWinner(playerTurn);
+      exit(0);
     }
   }
 }
 
-// الدالة الرئيسية لبدء البرنامج
-void main() {
-  var game = TicTacToe(); // إنشاء كائن اللعبة
-  game.play(); // بدء اللعبة
-}
+// Enum يمثل دور اللاعب
+enum Turn { Player1, Player2 }
